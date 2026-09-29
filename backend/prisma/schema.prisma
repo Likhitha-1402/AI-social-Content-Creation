@@ -1,0 +1,92 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  role           String          @default("creator")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  brandVoices    BrandVoice[]
+  chatSessions   ChatSession[]
+  scheduledPosts ScheduledPost[]
+  mediaAssets    MediaAsset[]
+}
+
+model BrandVoice {
+  id          String   @id @default(uuid())
+  name        String
+  tone        String
+  vocabulary  String
+  ctaStyle    String
+  emojiUsage  String
+  formatting  String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  title     String
+  isPinned  Boolean       @default(false)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ChatMessage {
+  id           String      @id @default(uuid())
+  role         String      // "user" or "assistant"
+  content      String
+  fileUrl      String?
+  fileName     String?
+  fileType     String?
+  isBookmarked Boolean     @default(false)
+  sessionId    String
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+}
+
+model ScheduledPost {
+  id            String   @id @default(uuid())
+  platforms     String   // Comma separated list of platforms (e.g., "instagram,linkedin")
+  content       String
+  imageUrl      String?
+  videoUrl      String?
+  scheduledTime DateTime
+  status        String   // "draft", "scheduled", "published", "failed"
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+}
+
+model MediaAsset {
+  id          String   @id @default(uuid())
+  type        String   // "image" or "video"
+  url         String
+  prompt      String
+  style       String?
+  aspectRatio String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  userId    String
+  details   String
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
